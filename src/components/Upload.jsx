@@ -1,91 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { parseBlob } from 'music-metadata-browser';
 import Essentia from 'essentia.js/dist/essentia.js-core.es.js';
 import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.es.js';
+import { preprocess, shortenAudio } from '/src/audioUtils';
 
-// *** EXAMPLE UTILITY: shortens audio length and/or downsamples. ***
-// You can put this in a separate "audioUtils.js" if you want a cleaner code structure.
-function shortenFloat32Array(original, keepRatio = 0.15) {
-  /**
-   * keepRatio < 1.0 means we keep that % of the audio.
-   * e.g., keepRatio=0.15 => keep ~15% of the samples (85% dropped).
-   *
-   * For example, this snippet just keeps the first [keepRatio * length] portion.
-   * Or you could keep a middle chunk, random chunk, etc.
-   */
-  if (keepRatio <= 0) return new Float32Array();
-  if (keepRatio >= 1) return original;
+// Arbitrary fraction of the file to keep (example: 15%)
+const KEEP_PERCENTAGE = 0.15;
 
-  const keepLength = Math.floor(original.length * keepRatio);
-  // e.g. keep from 0 → keepLength
-  return original.slice(0, keepLength);
-}
+// Create a single Essentia instance (synchronous build).
+let essentia = new Essentia(EssentiaWASM);
 
-/** Quick downsample from "currentRate" to "targetRate". */
-function downsampleFloat32Array(original, currentRate, targetRate) {
-  if (targetRate >= currentRate) return original;
-  const ratio = currentRate / targetRate;
-  const newLength = Math.floor(original.length / ratio);
-  const output = new Float32Array(newLength);
-
-  let offsetY = 0;
-  for (let i = 0; i < newLength; i++) {
-    // simple average approach
-    const start = Math.floor(i * ratio);
-    const end = Math.min(Math.floor((i + 1) * ratio), original.length);
-    let sum = 0,
-      count = 0;
-    for (let j = start; j < end; j++) {
-      sum += original[j];
-      count++;
-    }
-    output[i] = count ? sum / count : 0;
-    offsetY++;
-  }
-  return output;
+async function initEssentia() {
+  // If any custom WASM fetching is needed, do that here. Otherwise assume instant availability.
+  return essentia;
 }
 
 /**
- * Initialize a single Essentia instance from the synchronous ES build.
- * If you prefer the async approach, that's also fine. In your code snippet,
- * you're combining "Essentia" + "EssentiaWASM" directly.
+ * Perform Key & BPM detection at 16kHz, using HPCP + KeyExtractor + PercivalBpmEstimator.
  */
-let essentia = new Essentia(EssentiaWASM);
+function computeKeyAndBpm(floatData) {
+  const vector = essentia.arrayToVector(floatData);
 
-// If you needed to fetch a `.wasm` file, you'd do it differently, but the code snippet
-// suggests you already have a working instance.
-
-// Just a placeholder init; you might skip it if essential is already set:
-async function initEssentia() {
-  // If there's logic to load a separate .wasm, you'd do it here
-  return essentia; // or do nothing if it's already constructed
-}
-
-/** Convert multi-channel AudioBuffer => single Float32Array. */
-function toMono(audioBuffer) {
-  if (audioBuffer.numberOfChannels === 1) {
-    return audioBuffer.getChannelData(0);
-  }
-  const left = audioBuffer.getChannelData(0);
-  const right = audioBuffer.getChannelData(1);
-  const mixDown = new Float32Array(audioBuffer.length);
-  for (let i = 0; i < audioBuffer.length; i++) {
-    mixDown[i] = 0.5 * (left[i] + right[i]);
-  }
-  return mixDown;
-}
-
-/** Example key + BPM detection from your code. */
-function computeKeyAndBpm(ess, floatArray) {
-  const vectorSignal = ess.arrayToVector(floatArray);
-
-  // KeyExtractor
-  const keyData = ess.KeyExtractor(
-    vectorSignal,
-    true,     // HPCP
-    4096,     // frame size
-    4096,     // hop size
-    12,       // bins/octave
+  // Key extraction
+  const keyRes = essentia.KeyExtractor(
+    vector,
+    true,
+    4096,
+    4096,
+    12,
     3500,
     60,
     25,
@@ -98,9 +40,9 @@ function computeKeyAndBpm(ess, floatArray) {
     'hann'
   );
 
-  // BPM
-  const bpmOut = ess.PercivalBpmEstimator(
-    vectorSignal,
+  // BPM extraction
+  const bpmRes = essentia.PercivalBpmEstimator(
+    vector,
     1024,
     2048,
     128,
@@ -111,71 +53,70 @@ function computeKeyAndBpm(ess, floatArray) {
   );
 
   return {
-    key: `${keyData.key} ${keyData.scale}`.trim(),
-    bpm: bpmOut.bpm
+    key: `${keyRes.key} ${keyRes.scale}`.trim(),
+    bpm: bpmRes.bpm
   };
 }
 
-function Upload({ addTracks }) {
+export default function Upload({ addTracks }) {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [essentiaReady, setEssentiaReady] = useState(false);
+
+  // For drag & drop
+  const dropZoneRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Single AudioContext
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const audioContext = new AudioCtx();
 
-  // On mount, confirm Essentia is good to go
   useEffect(() => {
+    // Initialize Essentia once on mount
     initEssentia()
       .then(() => {
         setEssentiaReady(true);
-        console.log('Essentia is ready!');
+        console.log('Essentia is ready for analysis.');
       })
       .catch((err) => {
-        console.error('Failed to initialize Essentia:', err);
+        console.error('Failed to init Essentia:', err);
       });
   }, []);
 
   /**
-   * This function decodes the file, shortens it, and runs computeKey&Bpm
+   * Analyze a single file: decode -> preprocess -> shorten -> computeKeyAndBpm
    */
-  async function detectKeyAndBpm(file) {
-    if (!essentiaReady || !essentia) {
+  async function analyzeFile(file) {
+    if (!essentiaReady) {
       console.warn('Essentia not ready yet.');
-      return { key: '', bpm: 0 };
+      return { bpm: 0, key: '' };
     }
-    // 1) decode with Web Audio
     const arrayBuffer = await file.arrayBuffer();
-    const decoded = await audioContext.decodeAudioData(arrayBuffer);
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-    // 2) downmix to mono
-    let monoData = toMono(decoded);
+    // 1) Downmix + downsample -> 16kHz
+    const processed = preprocess(audioBuffer);
+    // 2) Keep only a fraction of audio for faster analysis
+    const partial = shortenAudio(processed, KEEP_PERCENTAGE, true);
 
-    // 3) Optional: downsample from e.g. 44.1kHz → 16kHz for faster HPCP
-    //    If your HPCP code expects 16k as in your example, do so:
-    monoData = downsampleFloat32Array(monoData, decoded.sampleRate, 16000);
-
-    // 4) Optional: shorten to keep only e.g. 15% of the track
-    //    This drastically reduces HPCP + BPM calculation time.
-    monoData = shortenFloat32Array(monoData, 0.2); 
-    // e.g. keep 20% instead of 15%. Adjust to your preference.
-
-    // 5) run Key + BPM
-    return computeKeyAndBpm(essentia, monoData);
+    return computeKeyAndBpm(partial);
   }
 
   /**
-   * The main event handler: parse ID3, call detectKeyAndBpm, unify results.
+   * Handle a batch of files, parse ID3, run Essentia, unify results in track objects.
    */
-  const handleFileUpload = async (evt) => {
-    const files = Array.from(evt.target.files);
-
+  async function handleFiles(files) {
+    setIsAnalyzing(true);
+    
     const trackPromises = files.map(async (file) => {
       try {
+        // Parse ID3 tags if present
         const metadata = await parseBlob(file);
-        const { title, artist, album, bpm, key } = metadata.common || {};
+        const { title, artist, album, bpm, key } = metadata.common ?? {};
 
-        // 1) Essentia analysis
-        const { bpm: eBpm, key: eKey } = await detectKeyAndBpm(file);
+        // Essentia analysis
+        const { bpm: eBpm, key: eKey } = await analyzeFile(file);
 
-        // 2) Merge results
+        // Final: prefer ID3 BPM/key if present; else use Essentia
         const finalBpm = bpm || (eBpm ? Math.round(eBpm).toString() : '');
         const finalKey = key || eKey || '';
 
@@ -187,8 +128,8 @@ function Upload({ addTracks }) {
           key: finalKey,
           file
         };
-      } catch (error) {
-        console.error('Error analyzing file:', error);
+      } catch (err) {
+        console.error(`Error analyzing ${file.name}:`, err);
         return {
           title: file.name,
           artist: 'Unknown Artist',
@@ -199,22 +140,77 @@ function Upload({ addTracks }) {
       }
     });
 
-    addTracks(await Promise.all(trackPromises));
+    const newTracks = await Promise.all(trackPromises);
+    addTracks(newTracks);
+
+    setIsAnalyzing(false);
+  }
+
+  /**
+   * File input "onChange" -> handle selected files.
+   */
+  const onFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length) handleFiles(files);
+  };
+
+  /**
+   * DRAG & DROP EVENT HANDLERS
+   */
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) handleFiles(files);
+  };
+
+  /**
+   * Make the drop zone clickable -> open hidden file input
+   */
+  const handleClickDropZone = () => {
+    fileInputRef.current.click();
   };
 
   return (
     <div style={{ margin: '20px 0' }}>
-      <label>
-        <strong>Upload MP3 Files: </strong>
-        <input
-          type="file"
-          accept="audio/mp3"
-          multiple
-          onChange={handleFileUpload}
-        />
-      </label>
+      {/* Hidden file input for fallback or manual selection */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="audio/mp3"
+        multiple
+        style={{ display: 'none' }}
+        onChange={onFileSelect}
+      />
+
+      {/* DRAG & DROP BOX */}
+      <div
+        ref={dropZoneRef}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={handleClickDropZone}
+        style={{
+          border: '2px dashed #bbb',
+          padding: '30px',
+          textAlign: 'center',
+          cursor: 'pointer',
+          color: '#444'
+        }}
+      >
+        <p style={{ margin: 0 }}>
+          Drag & drop MP3 files here, or click to select.
+        </p>
+      </div>
+
+      {/* Loading message while analyzing */}
+      {isAnalyzing && (
+        <p style={{ marginTop: '10px', color: 'orange', fontStyle: 'italic' }}>
+          Analyzing track(s)... This may take a few seconds.
+        </p>
+      )}
     </div>
   );
 }
-
-export default Upload;
