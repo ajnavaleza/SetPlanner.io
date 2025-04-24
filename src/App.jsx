@@ -12,7 +12,7 @@ function App() {
 
   return (
     <div style={{ margin: '20px' }}>
-      <h1>DJ Set Planner</h1>
+      <h1>SetPlanner.io</h1>
       <Upload addTracks={addTracks} />
       <TrackList tracks={tracks} setTracks={setTracks} />
     </div>
