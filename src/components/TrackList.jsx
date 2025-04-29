@@ -2,39 +2,31 @@ import React from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 /**
- * Parse a Camelot key string like "7A" or "10B" into { num: 7, letter: 'A' }.
+ * Parse a Camelot key string (e.g. "7A", "10B") into { num, letter }.
  */
 function parseCamelot(camelotKey) {
-  // e.g. "7A" => num=7, letter='A'
+  if (!camelotKey) return { num: 0, letter: '' };
   const letter = camelotKey.slice(-1).toUpperCase(); // 'A' or 'B'
-  const num = parseInt(camelotKey.slice(0, -1), 10); // e.g. 7
+  const num = parseInt(camelotKey.slice(0, -1), 10) || 0;
   return { num, letter };
 }
 
 /**
- * isCompatible: 
- * We treat 2 Camelot keys as compatible if their numeric values differ by 1, 2, or 3 
- * (with wrap-around at 12, so "12A" and "1A" differ by 1) – ignoring whether it's 'A' or 'B'.
- *
- * Example: "7A" => valid next are "4A/B", "5A/B", "6A/B", "8A/B", "9A/B", "10A/B".
+ * isCompatible: If the numeric distance (circular, wrapping at 12) between two keys is in [1..3],
+ * they’re considered compatible (e.g., "7A" can go to "4A/B", "5A/B", "6A/B", "8A/B", "9A/B", "10A/B").
  */
 function isCompatible(songA, songB) {
   if (!songA.key || !songB.key) return false;
-
   const { num: aNum } = parseCamelot(songA.key);
   const { num: bNum } = parseCamelot(songB.key);
 
-  // Compute difference in a circular sense (1 after 12, etc.)
   let diff = Math.abs(aNum - bNum);
-  diff = Math.min(diff, 12 - diff); // e.g. "12" vs "1" => diff=1
+  diff = Math.min(diff, 12 - diff); // wrap around at 12
 
-  // If the numeric difference is in [1..3], it’s “compatible”
   return diff >= 1 && diff <= 3;
 }
 
-/**
- * reorderDrag: reorder list after user manually drags a track.
- */
+/** Reorder tracks after a manual drag operation. */
 function reorderDrag(list, startIndex, endIndex) {
   const arr = Array.from(list);
   const [removed] = arr.splice(startIndex, 1);
@@ -42,70 +34,100 @@ function reorderDrag(list, startIndex, endIndex) {
   return arr;
 }
 
-/**
- * autoSortTracks: tries to find *any* ordering of "tracks" 
- * so consecutive songs are isCompatible(...).
- *
- * We'll do a simple backtracking approach: build up a path track-by-track.
+/** 
+ * Try to find the longest chain of tracks where consecutive pairs are compatible.
+ * We'll do a simple backtracking approach, storing the best chain we can find.
  */
-function autoSortTracks(tracks) {
+function findMaxChain(tracks) {
   const n = tracks.length;
   const used = new Array(n).fill(false);
-  let solution = null;
+  let bestChain = [];
 
   function backtrack(path) {
-    if (path.length === n) {
-      // Found a valid sequence of length n
-      solution = [...path];
-      return true;
+    // If path is longer than bestChain, replace bestChain
+    if (path.length > bestChain.length) {
+      bestChain = [...path];
     }
     for (let i = 0; i < n; i++) {
       if (!used[i]) {
-        // If first track OR it's compatible with the previous
         if (path.length === 0 || isCompatible(path[path.length - 1], tracks[i])) {
           used[i] = true;
           path.push(tracks[i]);
-          if (backtrack(path)) return true;
+
+          backtrack(path);
+
           path.pop();
           used[i] = false;
         }
       }
     }
-    return false;
   }
 
   backtrack([]);
-  return solution; // or null if no arrangement found
+  return bestChain;
 }
 
-// Main component: displays track list + "Auto Sort by Key" button
+/**
+ * autoSortTracks:
+ * 1) Find the biggest chain of compatible tracks.
+ * 2) Put that chain on top, leftover tracks on bottom.
+ */
+function autoSortTracks(tracks) {
+  if (tracks.length <= 1) return tracks;
+  const maxChain = findMaxChain(tracks);
+
+  if (maxChain.length === tracks.length) {
+    // Perfect chain includes all tracks
+    return maxChain;
+  } else {
+    // Some leftover tracks
+    const chainSet = new Set(maxChain);
+    const leftovers = tracks.filter(t => !chainSet.has(t));
+    return [...maxChain, ...leftovers];
+  }
+}
+
+/** 
+ * Compute total length of all tracks, convert to "MM:SS" string.
+ * We assume each track has a .length in seconds.
+ */
+function getTotalSetTime(tracks) {
+  const totalSec = tracks.reduce((acc, t) => acc + (t.length || 0), 0);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  // zero-pad seconds
+  const secStr = sec.toString().padStart(2, '0');
+  return `${min}:${secStr}`;
+}
+
+/** 
+ * The main TrackList component; includes:
+ * - "Estimated Set Time" at the top
+ * - "Auto Sort by Key" button
+ * - Draggable list of tracks
+ */
 export default function TrackList({ tracks, setTracks }) {
-  // Handle manual drag reorder
+  // Called after manual drag
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const newOrder = reorderDrag(tracks, result.source.index, result.destination.index);
     setTracks(newOrder);
   };
 
-  // Called when user clicks "Auto Sort by Key"
+  // Called on "Auto Sort by Key" click
   const handleAutoSort = () => {
+    if (tracks.length < 2) return;
     const newOrder = autoSortTracks(tracks);
-    if (newOrder) {
-      // If the new order is the same as the existing one, it won't appear to move
-      const unchanged = newOrder.every((track, i) => track === tracks[i]);
-      if (unchanged) {
-        console.log('Arrangement found, but it matches the current order');
-      }
-      setTracks(newOrder);
-    } else {
-      alert('No valid arrangement found based on Camelot compatibility.');
-    }
+    setTracks(newOrder);
   };
+
+  const estTime = getTotalSetTime(tracks);
 
   return (
     <div>
       <h2>Track List</h2>
-      {/* Show auto-sort button if there’s at least 2 tracks */}
+      <p><strong>Estimated Set Time:</strong> {estTime}</p>
+
       {tracks.length > 1 && (
         <button onClick={handleAutoSort} style={{ marginBottom: '1rem' }}>
           Auto Sort by Key
@@ -116,8 +138,8 @@ export default function TrackList({ tracks, setTracks }) {
         <Droppable droppableId="droppable">
           {(provided, snapshot) => (
             <div
-              {...provided.droppableProps}
               ref={provided.innerRef}
+              {...provided.droppableProps}
               style={{
                 backgroundColor: snapshot.isDraggingOver ? '#f0f0f0' : '#fff',
                 padding: 8,
@@ -126,7 +148,11 @@ export default function TrackList({ tracks, setTracks }) {
               }}
             >
               {tracks.map((track, index) => (
-                <Draggable key={`${track.key}_${index}`} draggableId={`${track.key}_${index}`} index={index}>
+                <Draggable
+                  key={`${track.key}_${track.title}_${index}`}
+                  draggableId={`${track.key}_${track.title}_${index}`}
+                  index={index}
+                >
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
@@ -147,11 +173,14 @@ export default function TrackList({ tracks, setTracks }) {
                       <div><strong>Artist:</strong> {track.artist}</div>
                       <div><strong>BPM:</strong> {track.bpm}</div>
                       <div><strong>Key:</strong> {track.key}</div>
+                      {track.length !== undefined && (
+                        <div><strong>Length:</strong> {Math.floor(track.length / 60)}:{(track.length % 60).toString().padStart(2, '0')}</div>
+                      )}
                     </div>
                   )}
                 </Draggable>
               ))}
-              {/* React Beautiful DnD placeholder */}
+
               {provided.placeholder}
             </div>
           )}

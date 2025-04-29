@@ -37,21 +37,19 @@ const KEEP_PERCENTAGE = 0.15;
 let essentia = new Essentia(EssentiaWASM);
 
 async function initEssentia() {
-  // If additional WASM initialization is needed, do it here. Otherwise assume ready.
   return essentia;
 }
 
 /**
- * Convert an Essentia "key" + "scale" into Camelot notation if possible
+ * Convert an Essentia "key" + "scale" into Camelot notation if possible.
  */
 function toCamelotNotation(essKey, essScale) {
   const combined = `${essKey} ${essScale}`.trim(); // e.g. "B major"
-  // If we have a match in camelotMap, return it; else fallback to the original label
-  return camelotMap[combined] || combined;
+  return camelotMap[combined] || combined; // fallback if not found in map
 }
 
 /**
- * HPCP-based Key + BPM extraction at 16kHz, matching your existing parameters.
+ * HPCP-based Key + BPM extraction at 16kHz—returns { key: "X", bpm: N }.
  */
 function computeKeyAndBpm(floatData) {
   const vector = essentia.arrayToVector(floatData);
@@ -73,6 +71,7 @@ function computeKeyAndBpm(floatData) {
     'cosine',
     'hann'
   );
+
   const bpmRes = essentia.PercivalBpmEstimator(
     vector,
     1024,
@@ -84,11 +83,9 @@ function computeKeyAndBpm(floatData) {
     16000
   );
 
-  // Convert "keyRes.key" + "keyRes.scale" into Camelot, e.g. "B major" → "1B"
   const camelot = toCamelotNotation(keyRes.key, keyRes.scale);
 
   return {
-    // We'll store the Camelot code in "key"
     key: camelot,
     bpm: bpmRes.bpm
   };
@@ -101,6 +98,7 @@ export default function Upload({ addTracks }) {
   const dropZoneRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Single AudioContext
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const audioContext = new AudioCtx();
 
@@ -115,36 +113,50 @@ export default function Upload({ addTracks }) {
       });
   }, []);
 
-  // Downmix + downsample + shorten -> compute Key+BPM
+  /**
+   * Downmix + downsample + shorten → Key+BPM
+   * Also returns the track’s full length in seconds from audioBuffer.duration.
+   */
   async function analyzeFile(file) {
     if (!essentiaReady) {
       console.warn('Essentia not ready yet.');
-      return { bpm: 0, key: '' };
+      return { bpm: 0, key: '', length: 0 };
     }
+
+    // 1) Decode audio
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
+    // 2) The track’s total length in seconds:
+    const fullLength = Math.round(audioBuffer.duration);
+
+    // 3) Preprocessing for HPCP
     const processed = preprocess(audioBuffer);
     const partial = shortenAudio(processed, KEEP_PERCENTAGE, true);
-    return computeKeyAndBpm(partial);
+    const { key, bpm } = computeKeyAndBpm(partial);
+
+    return { key, bpm, length: fullLength };
   }
 
+  /**
+   * Handle one or more files: parse ID3 + Essentia analysis, then combine results.
+   */
   async function handleFiles(files) {
     setIsAnalyzing(true);
 
     const trackPromises = files.map(async (file) => {
       try {
+        // Parse ID3
         const metadata = await parseBlob(file);
         const { title, artist, album, bpm, key } = metadata.common ?? {};
 
-        const { bpm: eBpm, key: eKey } = await analyzeFile(file);
+        // HPCP + BPM + song length
+        const { bpm: eBpm, key: eKey, length: trackLength } = await analyzeFile(file);
 
-        // 1) If ID3 BPM is present, prefer that over Essentia’s
+        // prefer ID3 BPM if present
         const finalBpm = bpm || (eBpm ? Math.round(eBpm).toString() : '');
-        // 2) If ID3 key is present, keep it (?). If you want to always use Camelot, skip this line:
-        // const finalKey = key || eKey || '';
-        // But presumably you always want the Camelot notation from Essentia:
-        const finalKey = eKey || '';
+        // always use Essentia's Camelot if you want
+        const finalKey = eKey || key || '';
 
         return {
           title: title || file.name,
@@ -152,6 +164,7 @@ export default function Upload({ addTracks }) {
           album: album || '',
           bpm: finalBpm,
           key: finalKey,
+          length: trackLength,  // store track length in seconds
           file
         };
       } catch (err) {
@@ -161,6 +174,7 @@ export default function Upload({ addTracks }) {
           artist: 'Unknown Artist',
           bpm: '',
           key: '',
+          length: 0,
           file
         };
       }
