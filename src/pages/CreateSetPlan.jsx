@@ -7,35 +7,36 @@ export default function CreateSetPlan() {
   const [length, setLength] = useState(60);
   const [loading, setLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleGenerate = async () => {
     setLoading(true);
     setGeneratedPlan(null);
+    setError(null);
 
     try {
+      if (!genre) {
+        throw new Error('Please enter a genre');
+      }
+
       const res = await fetch('/api/set-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify({ description, genre, referenceArtists, length })
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
       const data = await res.json();
-      if (data.error) {
-        throw new Error(data.error);
+      
+      if (!res.ok) {
+        throw new Error(data.details || data.error || `HTTP error! status: ${res.status}`);
       }
       
       setGeneratedPlan(data.plan);
     } catch (err) {
       console.error('Error details:', err);
-      setGeneratedPlan(null);
-      alert(`Error generating plan: ${err.message}`);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -67,45 +68,64 @@ export default function CreateSetPlan() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-4xl font-bold mb-6">🎧 Design Your Perfect Set</h1>
 
-        <textarea
-          className="w-full p-3 mb-6 rounded bg-gray-800 border border-gray-700"
-          rows="3"
-          placeholder="Describe the vibe or story of your set..."
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-        />
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm mb-2 font-medium">Genre *</label>
+            <input
+              className="w-full p-3 rounded bg-gray-800 border border-gray-700"
+              placeholder="e.g., Tech House, Progressive, Drum & Bass"
+              value={genre}
+              onChange={e => setGenre(e.target.value)}
+            />
+          </div>
 
-        <input
-          className="w-full p-3 mb-6 rounded bg-gray-800 border border-gray-700"
-          placeholder="e.g., Tech House, Progressive, Drum & Bass"
-          value={genre}
-          onChange={e => setGenre(e.target.value)}
-        />
+          <div>
+            <label className="block text-sm mb-2 font-medium">Description (Optional)</label>
+            <textarea
+              className="w-full p-3 rounded bg-gray-800 border border-gray-700"
+              rows="3"
+              placeholder="Describe the vibe or story of your set..."
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+            />
+          </div>
 
-        <input
-          className="w-full p-3 mb-6 rounded bg-gray-800 border border-gray-700"
-          placeholder="Comma-separated artist names"
-          value={referenceArtists}
-          onChange={e => setReferenceArtists(e.target.value)}
-        />
+          <div>
+            <label className="block text-sm mb-2 font-medium">Reference Artists (Optional)</label>
+            <input
+              className="w-full p-3 rounded bg-gray-800 border border-gray-700"
+              placeholder="Comma-separated artist names"
+              value={referenceArtists}
+              onChange={e => setReferenceArtists(e.target.value)}
+            />
+          </div>
 
-        <label className="block text-sm mb-2 font-medium">Set Length: {length} min</label>
-        <input
-          type="range"
-          min="30"
-          max="180"
-          value={length}
-          onChange={e => setLength(Number(e.target.value))}
-          className="w-full mb-6"
-        />
+          <div>
+            <label className="block text-sm mb-2 font-medium">Set Length: {length} min</label>
+            <input
+              type="range"
+              min="30"
+              max="180"
+              value={length}
+              onChange={e => setLength(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
 
-        <button
-          className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded font-semibold"
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? 'Generating...' : 'Generate Set Plan'}
-        </button>
+          {error && (
+            <div className="p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+              {error}
+            </div>
+          )}
+
+          <button
+            className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleGenerate}
+            disabled={loading || !genre.trim()}
+          >
+            {loading ? 'Generating...' : 'Generate Set Plan'}
+          </button>
+        </div>
 
         {generatedPlan && (
           <div className="mt-8 bg-gray-900 p-6 rounded-lg border border-gray-700">
@@ -114,37 +134,31 @@ export default function CreateSetPlan() {
             <div className="mb-4">
               <p className="text-gray-400">Genre: {generatedPlan.genre}</p>
               <p className="text-gray-400">Duration: {generatedPlan.total_duration} minutes</p>
-              <p className="text-gray-400 mb-4">{generatedPlan.description}</p>
+              {generatedPlan.description && (
+                <p className="text-gray-400 mb-4">{generatedPlan.description}</p>
+              )}
             </div>
 
-            <div className="space-y-6">
-              {generatedPlan.sections.intro.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">🌅 Intro</h3>
-                  {renderTrackList(generatedPlan.sections.intro)}
+            <div className="space-y-4">
+              {generatedPlan.tracks.map((track, index) => (
+                <div key={track.id} className="p-4 bg-gray-800 rounded">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">{index + 1}.</span>
+                        <h4 className="font-semibold">{track.name}</h4>
+                      </div>
+                      <p className="text-gray-400">{track.artist}</p>
+                    </div>
+                    <span className="text-sm text-gray-400">{track.duration}min</span>
+                  </div>
+                  {track.preview_url && (
+                    <audio controls className="mt-2 w-full" src={track.preview_url}>
+                      Your browser does not support the audio element.
+                    </audio>
+                  )}
                 </div>
-              )}
-
-              {generatedPlan.sections.build.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">📈 Build</h3>
-                  {renderTrackList(generatedPlan.sections.build)}
-                </div>
-              )}
-
-              {generatedPlan.sections.peak.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">🔥 Peak</h3>
-                  {renderTrackList(generatedPlan.sections.peak)}
-                </div>
-              )}
-
-              {generatedPlan.sections.outro.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">🌙 Outro</h3>
-                  {renderTrackList(generatedPlan.sections.outro)}
-                </div>
-              )}
+              ))}
             </div>
           </div>
         )}

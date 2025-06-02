@@ -10,14 +10,13 @@ const LandingPage: React.FC = () => {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-xl font-bold">SetPlanner.io</h1>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-12">
-          <h2 className="text-4xl font-bold mb-2">Welcome back Angelo</h2>
+          <h2 className="text-4xl font-bold mb-2">SetPlanner.io</h2>
           <p className="text-gray-400">Choose a feature to get started</p>
         </div>
 
