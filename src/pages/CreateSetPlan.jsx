@@ -115,7 +115,7 @@ export default function CreateSetPlan() {
             <label className="block text-sm mb-2 font-medium">Genre *</label>
             <input
               className="w-full p-3 rounded bg-gray-800 border border-gray-700"
-              placeholder="e.g., Tech House, Progressive, Drum & Bass"
+              placeholder="Case sensitive, comma-separated genre names (e.g., Tech House, Progressive, Drum & Bass)"
               value={genre}
               onChange={e => setGenre(e.target.value)}
             />
@@ -136,7 +136,7 @@ export default function CreateSetPlan() {
             <label className="block text-sm mb-2 font-medium">Reference Artists (Optional)</label>
             <input
               className="w-full p-3 rounded bg-gray-800 border border-gray-700"
-              placeholder="Comma-separated artist names"
+              placeholder="Case sensitive, comma-separated artist names (e.g., The Weeknd, Calvin Harris, Kygo)"
               value={referenceArtists}
               onChange={e => setReferenceArtists(e.target.value)}
             />
