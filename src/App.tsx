@@ -1,9 +1,15 @@
-import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import CreateSetPlan from './pages/CreateSetPlan';
 import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
-    <LandingPage />
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/create" element={<CreateSetPlan />} />
+      </Routes>
+    </Router>
   );
 }
 

@@ -13,7 +13,7 @@ export default function CreateSetPlan() {
     setGeneratedPlan(null);
 
     try {
-      const res = await fetch('http://127.0.0.1:5001/api/set-plan', {
+      const res = await fetch('/api/set-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
