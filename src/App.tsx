@@ -1,8 +1,9 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import CreateSetPlan from './pages/CreateSetPlan';
 import LandingPage from './pages/LandingPage';
+import CreateSetPlan from './pages/CreateSetPlan';
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <Routes>
@@ -11,6 +12,6 @@ function App() {
       </Routes>
     </Router>
   );
-}
+};
 
 export default App; 

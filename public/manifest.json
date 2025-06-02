@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "SetPlanner",
+  "name": "SetPlanner.io - AI-Powered DJ Set Creator",
   "icons": [
     {
       "src": "favicon.ico",
