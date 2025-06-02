@@ -1,14 +1,9 @@
 import SpotifyWebApi from 'spotify-web-api-node';
 
 function getRedirectUri() {
-  // If SPOTIFY_REDIRECT_URI is set, use it
-  if (process.env.SPOTIFY_REDIRECT_URI) {
-    return process.env.SPOTIFY_REDIRECT_URI;
-  }
-  
-  // For Vercel deployments
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}/api/auth/spotify/callback`;
+  // For production (Vercel deployment)
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://set-planner-io.vercel.app/api/auth/spotify/callback';
   }
   
   // For local development
@@ -29,10 +24,12 @@ export default async function handler(req, res) {
   const { code, state, error } = req.query;
   
   // Debug logging
-  console.log('Callback received:', {
+  console.log('Callback Debug:', {
     hasCode: !!code,
     hasState: !!state,
-    error: error || 'none'
+    error: error || 'none',
+    redirectUri: getRedirectUri(),
+    environment: process.env.NODE_ENV
   });
 
   // Check for Spotify error first
