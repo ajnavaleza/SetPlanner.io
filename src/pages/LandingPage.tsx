@@ -43,6 +43,7 @@ const LandingPage: React.FC = () => {
 
           {/* Double Finder Card */}
           <div className="bg-[#1A1625] rounded-lg p-6 cursor-pointer hover:bg-[#1A1625]/80 transition-colors">
+            <div className="absolute top-4 right-4 px-2 py-1 bg-[#015F43] text-[#00B37E] text-xs rounded">Coming Soon</div>
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
