@@ -8,6 +8,8 @@ export default function CreateSetPlan() {
   const [loading, setLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [error, setError] = useState(null);
+  const [savingToSpotify, setSavingToSpotify] = useState(false);
+  const [spotifySuccess, setSpotifySuccess] = useState(null);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -39,6 +41,46 @@ export default function CreateSetPlan() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveToSpotify = async () => {
+    if (!generatedPlan) return;
+
+    setSavingToSpotify(true);
+    setSpotifySuccess(null);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/spotify/create-playlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${genre} DJ Set - ${new Date().toLocaleDateString()}`,
+          description: description || `A ${length}-minute ${genre} DJ set created with SetPlanner.io`,
+          tracks: generatedPlan.tracks
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          // Redirect to Spotify auth if not authenticated
+          window.location.href = '/api/auth/spotify';
+          return;
+        }
+        throw new Error(data.error || 'Failed to create playlist');
+      }
+
+      setSpotifySuccess(data.playlist);
+    } catch (err) {
+      console.error('Error saving to Spotify:', err);
+      setError(err.message);
+    } finally {
+      setSavingToSpotify(false);
     }
   };
 
@@ -129,8 +171,31 @@ export default function CreateSetPlan() {
 
         {generatedPlan && (
           <div className="mt-8 bg-gray-900 p-6 rounded-lg border border-gray-700">
-            <h2 className="text-2xl font-semibold mb-4">🎶 Your DJ Set Plan</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">🎶 Your DJ Set Plan</h2>
+              <button
+                onClick={handleSaveToSpotify}
+                disabled={savingToSpotify}
+                className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] transition-colors rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingToSpotify ? 'Saving...' : 'Save to Spotify'}
+              </button>
+            </div>
             
+            {spotifySuccess && (
+              <div className="mb-6 p-4 bg-[#1DB954]/20 border border-[#1DB954] rounded-lg">
+                <p className="text-[#1DB954] mb-2">Successfully created Spotify playlist!</p>
+                <a 
+                  href={spotifySuccess.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-[#1DB954] transition-colors"
+                >
+                  Open playlist in Spotify →
+                </a>
+              </div>
+            )}
+
             <div className="mb-4">
               <p className="text-gray-400">Genre: {generatedPlan.genre}</p>
               <p className="text-gray-400">Duration: {generatedPlan.total_duration} minutes</p>

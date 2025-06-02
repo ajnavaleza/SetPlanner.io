@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { Button } from "../components/ui/button";
 import { useNavigate } from 'react-router-dom';
 
 const LandingPage: React.FC = () => {
@@ -10,71 +9,49 @@ const LandingPage: React.FC = () => {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4">
+          <h1 className="text-xl font-bold">SetPlanner.io</h1>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-12">
-          <h2 className="text-4xl font-bold mb-2">SetPlanner.io</h2>
-          <p className="text-gray-400">Choose a feature to get started</p>
+      <main className="max-w-3xl mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-5xl font-bold mb-6">Create Perfect DJ Sets</h2>
+          <p className="text-xl text-gray-400 mb-8">
+            SetPlanner.io helps DJs create dynamic and engaging sets using AI and Spotify's vast music library. 
+            Get intelligent track suggestions, perfect transitions, and create unforgettable musical journeys.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Create Set Plan Card */}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#1A1625] rounded-lg p-6">
+              <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 18L15 12L9 6" stroke="#00B37E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Smart Track Selection</h3>
+              <p className="text-gray-400">Input your desired genre and reference artists, and let AI find the perfect tracks for your set.</p>
+            </div>
+
+            <div className="bg-[#1A1625] rounded-lg p-6">
+              <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 7L13 15L9 11L3 17M21 7H15M21 7V13" stroke="#00B37E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Seamless Flow</h3>
+              <p className="text-gray-400">Get a perfectly structured set with smooth transitions and energy progression throughout your performance.</p>
+            </div>
+          </div>
+
           <div 
             onClick={() => navigate('/create')}
-            className="bg-[#1A1625] rounded-lg p-6 cursor-pointer hover:bg-[#1A1625]/80 transition-colors"
+            className="bg-[#00875F] hover:bg-[#015F43] transition-colors rounded-lg p-6 cursor-pointer text-center"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 7L13 15L9 11L3 17M21 7H15M21 7V13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="w-8 h-8 bg-[#2A1E3F] rounded-full flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-1">Create Set Plan</h3>
-          </div>
-
-          {/* Double Finder Card */}
-          <div className="bg-[#1A1625] rounded-lg p-6 cursor-pointer hover:bg-[#1A1625]/80 transition-colors">
-            <div className="absolute top-4 right-4 px-2 py-1 bg-[#015F43] text-[#00B37E] text-xs rounded">Coming Soon</div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 4L10.2 9.6H4L9 13.2L7.2 19L12 15.6L16.8 19L15 13.2L20 9.6H13.8L12 4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="w-8 h-8 bg-[#2A1E3F] rounded-full flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-1">Double Finder</h3>
-          </div>
-
-          {/* Gem Finder Card */}
-          <div className="bg-[#1A1625] rounded-lg p-6 relative">
-            <div className="absolute top-4 right-4 px-2 py-1 bg-[#015F43] text-[#00B37E] text-xs rounded">Coming Soon</div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-[#2A1E3F] rounded-lg flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 7H4M20 7V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V7M20 7L16 3H8L4 7M8 11H16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="w-8 h-8 bg-[#2A1E3F] rounded-full flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-1">Gem Finder</h3>
+            <h3 className="text-2xl font-semibold mb-2">Start Creating Your Set</h3>
+            <p className="text-gray-200">Generate a custom DJ set plan in minutes</p>
           </div>
         </div>
       </main>
