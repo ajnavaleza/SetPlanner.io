@@ -16,26 +16,21 @@ A web application that helps DJs plan their sets using Spotify's API and AI assi
 ```
 setplanner.io/
 ├── src/
-│   ├── components/
-│   │   └── ui/          # Reusable UI components
 │   ├── pages/
 │   │   ├── CreateSetPlan.jsx
 │   │   └── LandingPage.tsx
-│   ├── lib/
-│   │   └── utils.ts     # Utility functions
 │   ├── App.tsx          # Main application component
 │   ├── index.js         # Application entry point
 │   └── index.css        # Global styles
-├── server/
-│   ├── routes/
-│   │   └── setPlanner.js
-│   ├── services/
-│   │   ├── openaiService.js
-│   │   └── spotifyService.js
-│   └── index.js         # Server entry point
+├── api/                 # API routes (serverless functions)
+│   ├── auth/
+│   │   └── spotify/     # Spotify authentication
+│   ├── spotify/
+│   │   └── create-playlist.js
+│   └── set-plan.js      # Main set planning endpoint
 ├── public/              # Static assets
-├── package.json         # Client dependencies
-└── server/package.json  # Server dependencies
+├── server.js            # Development server
+└── package.json         # Dependencies
 ```
 
 ## Local Development
@@ -48,30 +43,37 @@ setplanner.io/
 
 2. Install dependencies:
    ```bash
-   npm install        # Client dependencies
-   cd server && npm install  # Server dependencies
+   npm install
    ```
 
-3. Create a `.env` file in the server directory:
+3. Create a `.env` file in the root directory:
    ```
    SPOTIFY_CLIENT_ID=your_spotify_client_id
    SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+   SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/spotify/callback
    ```
 
-4. Start the development servers:
+4. Start the development server:
    ```bash
-   # Terminal 1 - Client
-   npm start          # Runs on http://localhost:3000
+   npm run dev
+   ```
+   
+   This will start both the React development server (port 3000) and the API server (port 3001) concurrently.
 
-   # Terminal 2 - Server
-   cd server && npm start  # Runs on http://localhost:5001
+   Alternatively, you can run them separately:
+   ```bash
+   # Terminal 1 - React app
+   npm start
+   
+   # Terminal 2 - API server
+   npm run server
    ```
 
 ## Deployment
 
-### Client (Vercel)
+### Vercel Deployment
 
-The frontend is deployed on Vercel. To deploy your own instance:
+The application is deployed on Vercel as a full-stack app with serverless functions:
 
 1. Push your code to GitHub
 2. Import your repository in Vercel
@@ -79,14 +81,8 @@ The frontend is deployed on Vercel. To deploy your own instance:
    - Framework Preset: Create React App
    - Build Command: `npm run build`
    - Output Directory: `build`
-
-### Server (Vercel)
-
-The backend is deployed as serverless functions:
-
-1. Ensure your `vercel.json` is configured correctly
-2. Add your environment variables in the Vercel dashboard
-3. Deploy using the Vercel CLI:
+4. Add your environment variables in the Vercel dashboard
+5. Deploy using the Vercel CLI:
    ```bash
    vercel
    ```
@@ -100,8 +96,8 @@ The backend is deployed as serverless functions:
   - React Router DOM
 
 - **Backend**
-  - Node.js
-  - Express
+  - Vercel Serverless Functions (production)
+  - Express.js (development)
   - Spotify Web API
   - OpenAI API
 

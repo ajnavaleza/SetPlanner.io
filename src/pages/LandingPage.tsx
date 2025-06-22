@@ -16,10 +16,10 @@ const LandingPage: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-5xl font-bold mb-6">Create Perfect DJ Sets</h2>
+          <h2 className="text-5xl font-bold mb-6">Create Perfect Playlists</h2>
           <p className="text-xl text-gray-400 mb-8">
-            SetPlanner.io helps DJs create dynamic and engaging sets using AI and Spotify's vast music library. 
-            Get intelligent track suggestions, perfect transitions, and create unforgettable musical journeys.
+            SetPlanner.io helps you create amazing playlists using AI and Spotify's vast music library. 
+            Get intelligent track suggestions and create personalized musical experiences.
           </p>
         </div>
 
@@ -32,7 +32,7 @@ const LandingPage: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Smart Track Selection</h3>
-              <p className="text-gray-400">Input your desired genre and reference artists, and let AI find the perfect tracks for your set.</p>
+              <p className="text-gray-400">Input your desired genre and reference artists, and let AI find the perfect tracks for your playlist.</p>
             </div>
 
             <div className="bg-[#1A1625] rounded-lg p-6">
@@ -41,8 +41,8 @@ const LandingPage: React.FC = () => {
                   <path d="M21 7L13 15L9 11L3 17M21 7H15M21 7V13" stroke="#00B37E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Seamless Flow</h3>
-              <p className="text-gray-400">Get a perfectly structured set with smooth transitions and energy progression throughout your performance.</p>
+              <h3 className="text-xl font-semibold mb-2">Personalized Experience</h3>
+              <p className="text-gray-400">Get tracks that match your musical taste and create playlists that feel uniquely yours.</p>
             </div>
           </div>
 
@@ -50,8 +50,8 @@ const LandingPage: React.FC = () => {
             onClick={() => navigate('/create')}
             className="bg-[#00875F] hover:bg-[#015F43] transition-colors rounded-lg p-6 cursor-pointer text-center"
           >
-            <h3 className="text-2xl font-semibold mb-2">Start Creating Your Set</h3>
-            <p className="text-gray-200">Generate a custom DJ set plan in minutes</p>
+            <h3 className="text-2xl font-semibold mb-2">Start Creating Your Playlist</h3>
+            <p className="text-gray-200">Generate a custom playlist in minutes</p>
           </div>
         </div>
       </main>

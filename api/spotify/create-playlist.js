@@ -1,11 +1,11 @@
-import SpotifyWebApi from 'spotify-web-api-node';
+const SpotifyWebApi = require('spotify-web-api-node');
 
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET
 });
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -50,4 +50,6 @@ export default async function handler(req, res) {
     console.error('Error creating playlist:', error);
     res.status(500).json({ error: 'Failed to create playlist' });
   }
-} 
+}
+
+module.exports = { default: handler }; 

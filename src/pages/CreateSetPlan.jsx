@@ -84,31 +84,31 @@ export default function CreateSetPlan() {
     }
   };
 
-  const renderTrackList = (tracks) => {
-    if (!tracks || tracks.length === 0) return null;
-    
-    return tracks.map((track, index) => (
-      <div key={index} className="mb-4 p-4 bg-gray-800 rounded">
-        <div className="flex justify-between items-start">
-          <div>
-            <h4 className="font-semibold">{track.name}</h4>
-            <p className="text-gray-400">{track.artist}</p>
-          </div>
-          <span className="text-sm text-gray-400">{track.duration}min</span>
-        </div>
-        {track.preview_url && (
-          <audio controls className="mt-2 w-full" src={track.preview_url}>
-            Your browser does not support the audio element.
-          </audio>
-        )}
-      </div>
-    ));
-  };
-
   return (
     <div className="min-h-screen bg-black text-white px-6 py-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6">🎧 Design Your Perfect Set</h1>
+        <h1 className="text-4xl font-bold mb-6">🎵 Create Your Playlist</h1>
+
+        {/* Spotify Login Section */}
+        <div className="mb-8 p-6 bg-gradient-to-r from-[#1DB954] to-[#1ed760] rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-2">🎧 Enhanced with Spotify</h3>
+              <p className="text-white/90 text-sm">
+                Login to Spotify for AI-powered recommendations and save playlists directly to your account
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/api/auth/spotify'}
+              className="px-6 py-3 bg-white text-[#1DB954] hover:bg-gray-100 transition-colors rounded-full font-semibold flex items-center gap-2"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+              </svg>
+              Login to Spotify
+            </button>
+          </div>
+        </div>
 
         <div className="space-y-6">
           <div>
@@ -126,7 +126,7 @@ export default function CreateSetPlan() {
             <textarea
               className="w-full p-3 rounded bg-gray-800 border border-gray-700"
               rows="3"
-              placeholder="Describe the vibe or story of your set..."
+              placeholder="Describe the vibe or mood of your playlist..."
               value={description}
               onChange={e => setDescription(e.target.value)}
             />
@@ -140,10 +140,16 @@ export default function CreateSetPlan() {
               value={referenceArtists}
               onChange={e => setReferenceArtists(e.target.value)}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Tip: Adding reference artists helps find tracks that are similar in style and vibe to your favorite artists.
+              {!generatedPlan?.enhanced && (
+                <span className="text-blue-400"> Login to Spotify for enhanced AI recommendations!</span>
+              )}
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm mb-2 font-medium">Set Length: {length} min</label>
+            <label className="block text-sm mb-2 font-medium">Playlist Length: {length} min</label>
             <input
               type="range"
               min="30"
@@ -165,21 +171,31 @@ export default function CreateSetPlan() {
             onClick={handleGenerate}
             disabled={loading || !genre.trim()}
           >
-            {loading ? 'Generating...' : 'Generate Set Plan'}
+            {loading ? 'Generating...' : 'Generate Playlist'}
           </button>
         </div>
 
         {generatedPlan && (
           <div className="mt-8 bg-gray-900 p-6 rounded-lg border border-gray-700">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">🎶 Your DJ Set Plan</h2>
-              <button
-                onClick={handleSaveToSpotify}
-                disabled={savingToSpotify}
-                className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] transition-colors rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {savingToSpotify ? 'Saving...' : 'Save to Spotify'}
-              </button>
+              <h2 className="text-2xl font-semibold">🎶 Your Playlist</h2>
+              <div className="flex gap-2">
+                {!generatedPlan.enhanced && (
+                  <button
+                    onClick={() => window.location.href = '/api/auth/spotify'}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-full font-medium"
+                  >
+                    Login for Enhanced Features
+                  </button>
+                )}
+                <button
+                  onClick={handleSaveToSpotify}
+                  disabled={savingToSpotify}
+                  className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] transition-colors rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingToSpotify ? 'Saving...' : 'Save to Spotify'}
+                </button>
+              </div>
             </div>
             
             {spotifySuccess && (
@@ -202,23 +218,42 @@ export default function CreateSetPlan() {
               {generatedPlan.description && (
                 <p className="text-gray-400 mb-4">{generatedPlan.description}</p>
               )}
+              {generatedPlan.enhanced ? (
+                <div className="flex items-center gap-2 text-green-400 mb-4">
+                  <span>✨</span>
+                  <span className="text-sm">Enhanced recommendations used</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-blue-400 mb-4">
+                  <span>ℹ️</span>
+                  <span className="text-sm">Basic mode - Login to Spotify for enhanced AI recommendations</span>
+                </div>
+              )}
             </div>
 
+            {/* Track List */}
             <div className="space-y-4">
               {generatedPlan.tracks.map((track, index) => (
                 <div key={track.id} className="p-4 bg-gray-800 rounded">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm text-gray-500">{index + 1}.</span>
-                        <h4 className="font-semibold">{track.name}</h4>
                       </div>
+                      <h4 className="font-semibold text-lg">{track.name}</h4>
                       <p className="text-gray-400">{track.artist}</p>
                     </div>
-                    <span className="text-sm text-gray-400">{track.duration}min</span>
+                    <div className="text-right ml-4">
+                      <span className="text-sm text-gray-400">{track.duration}min</span>
+                      {track.popularity && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Popularity: {track.popularity}%
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {track.preview_url && (
-                    <audio controls className="mt-2 w-full" src={track.preview_url}>
+                    <audio controls className="mt-3 w-full" src={track.preview_url}>
                       Your browser does not support the audio element.
                     </audio>
                   )}
