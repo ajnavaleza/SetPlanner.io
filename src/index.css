@@ -46,3 +46,85 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+@layer components {
+  .page-container {
+    @apply min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white p-4;
+  }
+
+  .content-wrapper {
+    @apply max-w-3xl mx-auto;
+  }
+
+  .page-title {
+    @apply text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500;
+  }
+
+  .error-banner {
+    @apply bg-red-900/30 backdrop-blur-sm border border-red-500/50 rounded-lg p-4 mb-6;
+  }
+
+  .error-text {
+    @apply text-red-200;
+  }
+
+  .search-section {
+    @apply bg-gray-900/50 backdrop-blur-md rounded-lg p-6 mb-8 border border-gray-800 relative z-40;
+  }
+
+  .section-header {
+    @apply flex items-center gap-2 mb-4;
+  }
+
+  .section-title {
+    @apply text-xl font-semibold;
+  }
+
+  .search-input-wrapper {
+    @apply relative;
+  }
+
+  .search-input {
+    @apply w-full bg-gray-800/50 backdrop-blur-sm rounded-md border border-gray-700 text-white pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+  }
+
+  .loading-spinner {
+    @apply animate-spin rounded-full h-5 w-5 border-b-2 border-white;
+  }
+
+  .search-results-dropdown {
+    @apply absolute w-full mt-2 bg-gray-800/95 backdrop-blur-sm rounded-md shadow-lg z-50 max-h-60 overflow-auto border border-gray-700;
+  }
+
+  .search-result-item {
+    @apply p-3 cursor-pointer flex items-center gap-3 transition-colors;
+  }
+
+  .result-album-art {
+    @apply w-12 h-12 rounded-md;
+  }
+
+  .result-details {
+    @apply text-sm text-gray-400;
+  }
+
+  .songs-section {
+    @apply bg-gray-900/50 backdrop-blur-md rounded-lg p-6 border border-gray-800 relative z-30;
+  }
+
+  .empty-songs {
+    @apply text-gray-400 text-center py-8;
+  }
+
+  .song-item {
+    @apply flex items-center justify-between bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700/50 hover:border-gray-600/50 transition-all;
+  }
+
+  .song-votes {
+    @apply text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full text-sm;
+  }
+
+  .vote-button {
+    @apply bg-[#00875F] hover:bg-[#015F43] disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors rounded-lg px-4 py-2 flex items-center gap-2;
+  }
+}
