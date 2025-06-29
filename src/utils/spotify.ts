@@ -14,9 +14,10 @@ export interface SpotifyTrack {
 
 export const searchTracks = async (query: string): Promise<SpotifyTrack[]> => {
   try {
-    const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/spotify/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) {
-      console.error('Search failed:', await response.text());
+      const errorText = await response.text();
+      console.error('Search failed:', errorText);
       throw new Error('Search failed');
     }
     
