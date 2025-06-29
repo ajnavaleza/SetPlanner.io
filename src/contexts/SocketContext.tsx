@@ -1,58 +1,18 @@
-import { createContext, useContext, useEffect, useState, FC, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
+import { useAuth } from './AuthContext';
 
-interface SocketContextType {
-  on: <T = any>(event: string, callback: (data: T) => void) => void;
-  off: (event: string, callback?: (...args: any[]) => void) => void;
-  emit: (event: string, ...args: any[]) => void;
-  connected: boolean;
-}
+const SocketContext = createContext<Socket | null>(null);
 
-// In production, use the deployed server URL, otherwise use localhost
-const SOCKET_SERVER_URL = process.env.NODE_ENV === 'production'
-  ? process.env.REACT_APP_SOCKET_URL || 'https://set-planner-io-server.vercel.app'
-  : 'http://localhost:3001';
+export const useSocket = () => useContext(SocketContext);
 
-const SocketContext = createContext<SocketContextType | null>(null);
-
-export const useSocket = (): SocketContextType => {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error('useSocket must be used within a SocketProvider');
-  }
-  return context;
-};
-
-interface SocketProviderProps {
-  children: ReactNode;
-}
-
-export const SocketProvider: FC<SocketProviderProps> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
-    const newSocket = io(SOCKET_SERVER_URL, {
-      transports: ['websocket'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    newSocket.on('connect', () => {
-      console.log('Socket connected');
-      setConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
-      setConnected(false);
-    });
-
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      setConnected(false);
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || '', {
+      auth: token ? { token } : undefined,
     });
 
     setSocket(newSocket);
@@ -60,34 +20,11 @@ export const SocketProvider: FC<SocketProviderProps> = ({ children }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
-
-  const contextValue: SocketContextType = {
-    on: <T = any>(event: string, callback: (data: T) => void) => {
-      socket?.on(event, callback);
-    },
-    off: (event: string, callback?: (...args: any[]) => void) => {
-      if (callback) {
-        socket?.off(event, callback);
-      } else {
-        socket?.off(event);
-      }
-    },
-    emit: (event: string, ...args: any[]) => {
-      if (socket?.connected) {
-        socket.emit(event, ...args);
-      } else {
-        console.warn('Socket is not connected. Cannot emit event:', event);
-      }
-    },
-    connected,
-  };
+  }, [token]);
 
   return (
-    <SocketContext.Provider value={contextValue}>
+    <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
   );
-};
-
-export default SocketContext; 
+}; 
