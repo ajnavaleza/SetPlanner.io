@@ -31,16 +31,26 @@ export default function CreateSetPlan() {
         body: JSON.stringify({ description, genre, referenceArtists, length })
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        throw new Error('Failed to parse server response. Please try again.');
+      }
       
       if (!res.ok) {
-        throw new Error(data.details || data.error || `HTTP error! status: ${res.status}`);
+        throw new Error(data.error || `HTTP error! status: ${res.status}`);
+      }
+      
+      if (!data.plan) {
+        throw new Error('Invalid response format from server');
       }
       
       setGeneratedPlan(data.plan);
     } catch (err) {
       console.error('Error details:', err);
-      setError(err.message);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
