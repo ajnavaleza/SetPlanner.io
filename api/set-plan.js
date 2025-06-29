@@ -1,5 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import SpotifyWebApi from 'spotify-web-api-node';
+const SpotifyWebApi = require('spotify-web-api-node');
 
 // Mock data for fallback
 const mockTracks = [
@@ -37,8 +36,8 @@ async function getAccessToken() {
   }
 }
 
-export default async function handler(req, res) {
-  // Set CORS headers
+module.exports = async (req, res) => {
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -80,4 +79,4 @@ export default async function handler(req, res) {
     console.error('Error generating set plan:', error);
     return res.status(500).json({ error: 'Failed to generate set plan' });
   }
-} 
+}; 
