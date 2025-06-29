@@ -8,7 +8,10 @@ interface SocketContextType {
   connected: boolean;
 }
 
-const SOCKET_SERVER_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
+// In production, use the deployed server URL, otherwise use localhost
+const SOCKET_SERVER_URL = process.env.NODE_ENV === 'production'
+  ? process.env.REACT_APP_SOCKET_URL || 'https://your-deployed-server.vercel.app'
+  : 'http://localhost:3001';
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
