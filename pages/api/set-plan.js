@@ -1,9 +1,5 @@
-const SpotifyWebApi = require('spotify-web-api-node');
-
-const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET
-});
+import { NextApiRequest, NextApiResponse } from 'next';
+import SpotifyWebApi from 'spotify-web-api-node';
 
 // Mock data for fallback
 const mockTracks = [
@@ -25,6 +21,11 @@ const mockTracks = [
   }
 ];
 
+const spotifyApi = new SpotifyWebApi({
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET
+});
+
 async function getAccessToken() {
   try {
     const data = await spotifyApi.clientCredentialsGrant();
@@ -37,7 +38,7 @@ async function getAccessToken() {
 }
 
 export default async function handler(req, res) {
-  // Enable CORS
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // Handle OPTIONS request
+  // Handle preflight request
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -64,24 +65,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Genre is required' });
     }
 
-    // Check if Spotify credentials are available and working
-    const spotifyAvailable = await getAccessToken();
-    
-    if (!spotifyAvailable) {
-      console.log('Spotify integration unavailable, using mock data');
-      return res.status(200).json({
-        plan: {
-          genre,
-          description,
-          total_duration: length,
-          tracks: mockTracks,
-          enhanced: false
-        }
-      });
-    }
-
-    // For now, return mock data even if Spotify is available
-    // We'll implement the full Spotify integration later
+    // Return mock data for now
     return res.status(200).json({
       plan: {
         genre,
@@ -94,6 +78,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error generating set plan:', error);
-    res.status(500).json({ error: 'Failed to generate set plan' });
+    return res.status(500).json({ error: 'Failed to generate set plan' });
   }
 } 

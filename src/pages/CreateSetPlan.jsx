@@ -27,23 +27,18 @@ export default function CreateSetPlan() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ description, genre, referenceArtists, length })
       });
 
-      let data;
-      try {
-        const textResponse = await res.text();
-        console.log('Raw response:', textResponse);
-        data = textResponse ? JSON.parse(textResponse) : null;
-      } catch (jsonError) {
-        console.error('JSON parsing error:', jsonError);
-        throw new Error('Failed to parse server response. Please try again.');
-      }
-      
       if (!res.ok) {
-        throw new Error(data?.error || `HTTP error! status: ${res.status}`);
+        const errorText = await res.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Server error: ${res.status}`);
       }
+
+      const data = await res.json();
       
       if (!data?.plan) {
         throw new Error('Invalid response format from server');
