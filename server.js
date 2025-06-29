@@ -24,13 +24,21 @@ setupSocketServer(server);
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
 
+<<<<<<< HEAD:server.js
 // Middleware
 app.use(cors());
 app.use(express.json());
 
+=======
+>>>>>>> parent of 8ab2333 (health check):backend/server.js
 // API routes
 app.use('/api/auth/dj', require('./api/auth/dj/login'));
 app.get('/api/spotify/search', searchHandler);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {
