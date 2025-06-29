@@ -11,26 +11,39 @@ console.log('Environment variables loaded:', {
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
   HAS_DJ_PASSWORD_HASH: !!process.env.DJ_PASSWORD_HASH,
-  HAS_JWT_SECRET: !!process.env.JWT_SECRET,
-  HAS_SPOTIFY_CREDENTIALS: !!(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET)
+  HAS_JWT_SECRET: !!process.env.JWT_SECRET
 });
 
 const app = express();
 const server = http.createServer(app);
 
-// Set up socket.io
-setupSocketServer(server);
+// Set up socket.io with proper CORS configuration
+const io = setupSocketServer(server);
+
+// Configure CORS for Express
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.CLIENT_URL || 'https://set-planner-io.vercel.app'
+    : 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  credentials: true
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json());
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
 // API routes
 app.use('/api/auth/dj', require('./api/auth/dj/login'));
 app.get('/api/spotify/search', searchHandler);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {

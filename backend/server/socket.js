@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Use Redis or a database in production
 let isVotingEnabled = false;
 let songs = new Map(); // Map to store songs with their IDs
 
@@ -19,17 +20,27 @@ function verifyDJToken(token) {
 function setupSocketServer(server) {
   const io = new Server(server, {
     cors: {
-      origin: '*', // In production, replace with your actual domain
-      methods: ['GET', 'POST']
-    }
+      origin: process.env.NODE_ENV === 'production'
+        ? process.env.CLIENT_URL || 'https://set-planner-io.vercel.app'
+        : 'http://localhost:3000',
+      methods: ['GET', 'POST'],
+      credentials: true
+    },
+    pingTimeout: 60000, // Increase ping timeout
+    pingInterval: 25000 // Increase ping interval
   });
 
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
     let isDJ = false;
 
+    // Debug log current state
+    console.log('Current system status:', isVotingEnabled);
+    console.log('Current songs count:', songs.size);
+
     // Send current system status to newly connected clients
     socket.emit('systemStatus', isVotingEnabled);
+    console.log('Sent system status to client:', isVotingEnabled);
     
     // Send current song list to newly connected clients
     socket.emit('songList', Array.from(songs.values()));
@@ -38,20 +49,26 @@ function setupSocketServer(server) {
     socket.on('authenticate', (token) => {
       isDJ = verifyDJToken(token);
       socket.emit('authStatus', isDJ);
+      console.log('DJ authentication:', { socketId: socket.id, isDJ });
     });
 
     // Handle system status requests
     socket.on('getSystemStatus', () => {
+      console.log('System status requested by client:', socket.id);
       socket.emit('systemStatus', isVotingEnabled);
+      console.log('Sent system status:', isVotingEnabled);
     });
 
     // Handle system status changes (DJ only)
     socket.on('setSystemStatus', (status, token) => {
+      console.log('System status change requested:', { status, socketId: socket.id });
       if (!verifyDJToken(token)) {
         socket.emit('error', 'Unauthorized: DJ access required');
+        console.log('Unauthorized system status change attempt');
         return;
       }
       isVotingEnabled = status;
+      console.log('System status updated to:', isVotingEnabled);
       io.emit('systemStatus', isVotingEnabled);
     });
 
@@ -138,6 +155,11 @@ function setupSocketServer(server) {
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
+    });
+
+    // Handle errors
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
     });
   });
 
