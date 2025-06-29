@@ -36,14 +36,19 @@ app.use(express.json());
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
 
+// Health check endpoint (place it before other routes)
+app.get('/health', (req, res) => {
+  console.log('Health check requested');
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
+  });
+});
+
 // API routes
 app.use('/api/auth/dj', require('./api/auth/dj/login'));
 app.get('/api/spotify/search', searchHandler);
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
 
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {
@@ -53,4 +58,5 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Health check endpoint available at http://localhost:${PORT}/health`);
 }); 
