@@ -2,14 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music2, Clock, Users2, Sparkles, Save, Loader2 } from 'lucide-react';
 
-// Get the base URL based on the environment
-const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return '';
-};
-
 export default function CreateSetPlan() {
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('');
@@ -31,8 +23,7 @@ export default function CreateSetPlan() {
         throw new Error('Please enter a genre');
       }
 
-      const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/set-plan`, {
+      const res = await fetch('/api/set-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,17 +33,19 @@ export default function CreateSetPlan() {
 
       let data;
       try {
-        data = await res.json();
+        const textResponse = await res.text();
+        console.log('Raw response:', textResponse);
+        data = textResponse ? JSON.parse(textResponse) : null;
       } catch (jsonError) {
         console.error('JSON parsing error:', jsonError);
         throw new Error('Failed to parse server response. Please try again.');
       }
       
       if (!res.ok) {
-        throw new Error(data.error || `HTTP error! status: ${res.status}`);
+        throw new Error(data?.error || `HTTP error! status: ${res.status}`);
       }
       
-      if (!data.plan) {
+      if (!data?.plan) {
         throw new Error('Invalid response format from server');
       }
       
@@ -73,8 +66,7 @@ export default function CreateSetPlan() {
     setError(null);
 
     try {
-      const baseUrl = getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/spotify/create-playlist`, {
+      const res = await fetch('/api/spotify/create-playlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
