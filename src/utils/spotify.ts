@@ -1,9 +1,3 @@
-import SpotifyWebApi from 'spotify-web-api-node';
-
-const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.REACT_APP_SPOTIFY_CLIENT_ID,
-});
-
 export interface SpotifyTrack {
   id: string;
   name: string;
@@ -14,7 +8,7 @@ export interface SpotifyTrack {
 
 export const searchTracks = async (query: string): Promise<SpotifyTrack[]> => {
   try {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/spotify/search?q=${encodeURIComponent(query)}`);
+    const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Search failed:', errorText);
