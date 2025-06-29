@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SocketContext, { useSocket } from '../contexts/SocketContext';
+import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -22,6 +22,8 @@ const DJControlPanel: React.FC = () => {
   const [qrUrl, setQrUrl] = useState('');
 
   useEffect(() => {
+    if (!socket) return;
+
     const token = localStorage.getItem('dj_token');
     if (!token) {
       navigate('/dj-login');
@@ -62,6 +64,8 @@ const DJControlPanel: React.FC = () => {
   }, [socket, navigate, logout]);
 
   const toggleVotingSystem = () => {
+    if (!socket) return;
+
     const token = localStorage.getItem('dj_token');
     if (!token) {
       navigate('/dj-login');
@@ -73,6 +77,8 @@ const DJControlPanel: React.FC = () => {
   };
 
   const removeSong = (songId: string) => {
+    if (!socket) return;
+
     const token = localStorage.getItem('dj_token');
     if (!token) {
       navigate('/dj-login');

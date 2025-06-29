@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, FC, ReactNode } from 'react';
+import { createContext, useContext, useState, FC, ReactNode } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  token: string | null;
   login: (password: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -29,6 +30,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return Boolean(localStorage.getItem('dj_token'));
   });
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('dj_token'));
 
   const login = async (password: string): Promise<boolean> => {
     try {
@@ -45,6 +47,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       }
 
       localStorage.setItem('dj_token', data.token);
+      setToken(data.token);
       setIsAuthenticated(true);
       return true;
     } catch (error) {
@@ -55,11 +58,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     localStorage.removeItem('dj_token');
+    setToken(null);
     setIsAuthenticated(false);
   };
 
   const value: AuthContextType = {
     isAuthenticated,
+    token,
     login,
     logout,
   };

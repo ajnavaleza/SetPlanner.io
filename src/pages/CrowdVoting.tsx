@@ -40,8 +40,22 @@ const CrowdVoting: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
 
+    // Request initial system status
+    socket.emit('getSystemStatus');
+
+    socket.on('connect', () => {
+      // Re-request system status on reconnection
+      socket.emit('getSystemStatus');
+      setError('');
+    });
+
+    socket.on('disconnect', () => {
+      setError('Lost connection to server. Reconnecting...');
+    });
+
     socket.on('systemStatus', (status: boolean) => {
       setIsSystemActive(status);
+      setError(''); // Clear any connection errors when we get status
     });
 
     socket.on('songList', (updatedSongs: Song[]) => {
@@ -53,6 +67,8 @@ const CrowdVoting: React.FC = () => {
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('disconnect');
       socket.off('systemStatus');
       socket.off('songList');
       socket.off('error');
