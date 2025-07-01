@@ -27,7 +27,6 @@ export default function CreateSetPlan() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify({ description, genre, referenceArtists, length })
       });
